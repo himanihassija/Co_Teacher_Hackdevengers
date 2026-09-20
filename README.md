@@ -1,282 +1,609 @@
 # Athena EchoSphere
 
-**An AI co-teacher that joins the classroom, teaches alongside the teacher, and always answers to them.**
+**An AI co teacher that joins the classroom, teaches alongside the teacher, and always answers to them.**
 
-Athena isn't a chatbot bolted onto a video call. She's a real-time, voice-driven AI co-teacher who joins a live classroom session, listens, speaks, draws on a shared whiteboard, checks comprehension, tracks who's falling behind, and defers completely to the teacher's authority at every moment. Built end-to-end on Agora's real-time infrastructure.
+Athena EchoSphere is a real time, voice driven AI co teacher for live virtual classrooms. She listens, speaks, explains, visualizes, checks understanding, identifies learning gaps, and supports students while keeping the teacher in complete control.
 
----
+Athena is not a chatbot attached to a video call. She is designed as an active classroom participant with real time voice interaction, shared visual learning, live quizzes, learning gap detection, personalized support, interactive 3D learning, and post class intelligence.
 
-## Table of Contents
-
-- [Core Concept](#core-concept)
-- [Features](#features)
-  - [Live Voice Co-Teaching](#1-live-voice-co-teaching)
-  - [Turn-Taking & Restraint Model](#2-turn-taking--restraint-model)
-  - [Shared Whiteboard](#3-shared-whiteboard)
-  - [Live Quizzes & Gap Detection](#4-live-quizzes--gap-detection)
-  - [Nobody Left Behind](#5-nobody-left-behind)
-  - [Teacher Controls](#6-teacher-controls)
-  - [Athena AI Assistant (Teacher Copilot)](#7-athena-ai-assistant-teacher-copilot)
-  - [Post-Class Report](#8-post-class-report)
-  - [Multilingual Support](#9-multilingual-support)
-  - [Screen Sharing](#10-screen-sharing)
-  - [Avatar & Visual Presence](#11-avatar--visual-presence)
-- [Tech Stack](#tech-stack)
-- [Architecture](#architecture)
-- [Getting Started](#getting-started)
-- [Environment Variables](#environment-variables)
-- [Project Structure](#project-structure)
+Built end to end on Agora's real time infrastructure.
 
 ---
 
-## Core Concept
+# Table of Contents
 
-A teacher creates a session, students join with a share code, and the teacher can bring Athena into the room at any point. From there, Athena behaves like a real co-teacher:
+* Core Concept
+* Features
 
-- She **listens** to everything but only speaks when addressed, invited, or when she detects something worth flagging.
-- She **explains** concepts live, grounded in whatever lesson material the teacher has uploaded.
-- She **draws** what she explains on a shared whiteboard, visible to the whole class.
-- She **checks understanding** with live quizzes and flags class-wide misconceptions as they happen, not after the fact.
-- She **never overrides the teacher** — she can be muted, interrupted, or removed from the room instantly, at any time.
-
----
-
-## Features
-
-### 1. Live Voice Co-Teaching
-
-Athena joins the classroom's real-time audio channel as a live participant. She speaks with natural turn-taking, can be addressed by name ("Athena, can you explain...") or invoked directly by the teacher, and responds with grounded, generated explanations — not canned scripts.
-
-- Real-time speech recognition, language model reasoning, and text-to-speech all running through a single pipeline.
-- Lesson material the teacher uploads gets chunked and injected into her system prompt, so her answers use the room's own terminology instead of generic textbook language.
-- Adjustable verbosity (terse / normal / detailed) so her answers match the pace of the class.
-
-### 2. Turn-Taking & Restraint Model
-
-The hardest part of an AI co-teacher isn't what it says — it's knowing when to stay silent. Athena has a dedicated **floor state machine**, separate from raw voice-activity detection, that governs exactly when she's allowed to speak:
-
-- She waits for a wake phrase or explicit teacher invocation before answering — she doesn't jump in on every sentence.
-- A teacher's barge-in is enforced explicitly and instantly: if the teacher starts talking, Athena's current turn is cut off, no exceptions.
-- A **restraint meter** visualizes her decisions in real time — `listening`, `held-back`, `speaking` — so the teacher can see not just when she spoke, but when she chose not to.
-- Doubts she hears but doesn't answer out loud aren't lost — they're logged as **held-back doubts** and surfaced in the shared workspace instead.
-- Turn detection is tuned specifically for a multi-person classroom rather than a 1:1 call — silence thresholds are widened so a teacher pausing mid-explanation isn't mistaken for the end of a turn.
-
-### 3. Shared Whiteboard
-
-A live, collaborative whiteboard (built on Excalidraw) that every participant sees in real time — presented the same way a screen share would be.
-
-- The teacher can annotate it directly.
-- Athena can write to it herself, when annotation mode is enabled — turning a spoken explanation into an actual diagram, live, in front of the class.
-- Board state syncs instantly across every connected participant.
-
-### 4. Live Quizzes & Gap Detection
-
-Athena doesn't wait until the end of a unit to check understanding.
-
-- She can issue a timed, multiple-choice pop quiz — either on teacher request or automatically, in a set of several questions on a topic.
-- Every answer is scored in real time, with results visible to both the student and the teacher.
-- If enough students miss the same concept, it's flagged as a **class-wide learning gap**, and the teacher can launch a targeted quiz on just that topic with one click.
-- A post-class report ranks each student's concept mastery per topic (mastered / developing / struggling).
-
-### 5. Nobody Left Behind
-
-A cluster of features specifically aimed at the students who don't have the loudest voice in the room, or who weren't in the room at all:
-
-- **Shared workspace / sticky notes** — a live, Miro-style board where student questions, doubts Athena deliberately held back from answering aloud, teacher insights, and key takeaways get pinned in real time, categorized and votable.
-- **Targeted reading** — Athena can recommend supplementary reading for a struggling student, which the teacher must explicitly approve before it ever reaches them.
-- **1:1 catch-up booking** — students can book real one-on-one time with the teacher (and Athena) directly from their own view — picking an available date/time slot, a focus topic, and a preferred language.
-- **Absent-student dispatcher** — for students who missed class entirely, Athena auto-generates a full catch-up packet: an AI-written executive summary of the lesson, key takeaways, flagged misconceptions, and a diagnostic quiz — all built from the actual session transcript and gap data. It can be dispatched via a pre-filled WhatsApp message or delivered as a real email through **Resend**, automatically, without the teacher writing anything by hand.
-
-### 6. Teacher Controls
-
-The teacher retains full, instant authority over Athena at every point in the session:
-
-| Control | Effect |
-|---|---|
-| **Bring Athena in** | Starts her live agent session and adds her to the room |
-| **Mute Athena** | Silences her immediately, mid-sentence if needed |
-| **Unmute Athena** | Restores her ability to speak |
-| **Send Athena out** | Removes her from the session entirely |
-| **Cut off current turn** | Ends whatever she's currently saying |
-| **Force speak** | Makes her address a specific topic or student on demand |
-| **Disable / enable topic** | Blocks her from discussing a specific subject (e.g. "next week's exam") |
-| **Set student invocation** | Controls whether students can address her directly, or only the teacher can |
-| **Per-student proficiency** | Tags each student's level so Athena can calibrate explanations accordingly |
-
-None of her actions are unsupervised or irreversible — every override is one click away.
-
-### 7. Athena AI Assistant (Teacher Copilot)
-
-A second, private instance of Athena — visible only to the teacher, separate from the voice agent students hear:
-
-- Suggests check-in questions to gauge the room.
-- Generates real-world analogies on the fly.
-- Summarizes how the class is actually doing, mid-lesson.
-- Drafts board challenge problems in seconds.
-
-This runs as a quiet sidebar chat, so the teacher can consult it without ever interrupting the live lesson happening in front of the class.
-
-### 8. Post-Class Report
-
-When a session ends, everything is compiled into a structured summary rather than left as a raw transcript:
-
-- Key concept grasp percentage across the class.
-- Total questions asked to Athena.
-- Topics covered.
-- Identified learning gaps and common misconceptions, with which students were affected.
-- Per-student breakdown: proficiency level, questions asked, quiz performance, and a written note.
-- Concept mastery rankings per student, per topic.
-- Athena's own narrative read of how the session went.
-
-### 9. Multilingual Support
-
-Real-time translation is available for transcript content, with per-participant language preference — useful for multilingual classrooms where not every student's first language matches the lesson's.
-
-### 10. Screen Sharing
-
-Any permitted participant can share their screen to the room. The teacher grants or revokes screen-share permission per student, and an active share automatically takes over the main stage view for everyone.
-
-### 11. Avatar & Visual Presence
-
-Athena isn't just a voice — she has a visual presence in her tile:
-
-- A one-time animated entrance plays the moment she's brought into the room.
-- She settles into a looping idle animation for the rest of the session.
-- Speaking state is visually indicated (a glow/pulse effect) so it's clear when she's actively talking versus idle.
+  * Live Voice Co Teaching
+  * Turn Taking and Restraint Model
+  * Shared Whiteboard
+  * Interactive 3D Learning
+  * Live Quizzes and Gap Detection
+  * Nobody Left Behind
+  * Teacher Controls
+  * Athena AI Assistant
+  * Post Class Report
+  * Multilingual Support
+  * Screen Sharing
+  * Avatar and Visual Presence
+* Technology Stack
+* Architecture
+* Implementation Flow
+* Getting Started
+* Environment Variables
+* Project Structure
 
 ---
 
-## Tech Stack
+# Core Concept
 
-| Layer | Technology |
-|---|---|
-| **Real-time voice & video** | [Agora](https://www.agora.io/) — RTC (audio/video channel), RTM (messaging/transcript relay), and the **Conversational AI Engine** (`agora-agents` SDK) for the voice agent pipeline |
-| **Speech-to-text** | Deepgram (via Agora's resold, no-key-required preset) or Sarvam AI (for Indian language support), configurable |
-| **Language model** | Agora's resold OpenAI-compatible models (`gpt-4o-mini` / `gpt-4.1-mini` / `gpt-5-nano` / `gpt-5-mini`), billed through the Agora project — no separate OpenAI key required |
-| **Text-to-speech** | MiniMax TTS or Sarvam TTS, resold through Agora |
-| **Avatar animation** | Lottie (`@lottiefiles/dotlottie-react`) for the idle loop, plus a one-time HTML5 video intro clip |
-| **Shared whiteboard** | [Excalidraw](https://excalidraw.com/), synced live across participants |
-| **Frontend** | [Next.js](https://nextjs.org/) (App Router), React, TypeScript, Tailwind CSS |
-| **Backend orchestrator** | [Fastify](https://fastify.dev/) (Node.js/TypeScript), long-lived process (required to hold live `AgentSession` references for interrupt/say/think/update calls) |
-| **Transactional email** | [Resend](https://resend.com/) — for absent-student parent notifications |
-| **Persistence (optional)** | PostgreSQL — session/report storage; the app degrades gracefully to in-memory-only if unset |
-| **Monorepo tooling** | pnpm workspaces |
-| **Shared types** | A dedicated `@echosphere/shared-types` package used by both the frontend and orchestrator |
+A teacher creates a classroom session and students join using a share code. The teacher can bring Athena into the classroom whenever additional support is needed.
+
+From there, Athena behaves like a real co teacher.
+
+* She **listens** to the classroom while remaining aware of the ongoing conversation.
+* She **speaks** when addressed, invited, or when intervention is appropriate.
+* She **explains** concepts using the lesson material provided by the teacher.
+* She **draws** explanations on a shared whiteboard.
+* She **visualizes** complex concepts through interactive 3D learning experiences and educational models.
+* She **checks understanding** through live quizzes.
+* She **detects learning gaps** while the class is still happening.
+* She **supports struggling and absent students** through personalized follow up experiences.
+* She **adapts explanations** according to student proficiency.
+* She **never overrides the teacher**.
+
+The central principle behind Athena is simple:
+
+> **An AI co teacher should know not only what to say, but when to speak and when to stay silent.**
 
 ---
 
-## Architecture
+# Features
 
+## 1. Live Voice Co Teaching
+
+Athena joins the classroom's real time audio channel as a live participant.
+
+Students and teachers can address Athena naturally, such as:
+
+> “Athena, can you explain photosynthesis?”
+
+She processes the classroom interaction and responds through natural voice.
+
+### Key capabilities
+
+* Real time speech recognition
+* Language model reasoning
+* Natural text to speech
+* Teacher controlled invocation
+* Lesson grounded responses
+* Adjustable response verbosity
+* Classroom aware conversation
+
+Lesson material uploaded by the teacher is incorporated into Athena's context so explanations can use the terminology and content of the actual lesson instead of generic textbook responses.
+
+---
+
+# 2. Turn Taking and Restraint Model
+
+The hardest part of an AI co teacher is not generating an answer.
+
+It is knowing when **not** to answer.
+
+Athena therefore uses a dedicated floor state machine on top of voice activity detection.
+
+### Athena can exist in three primary states
+
+**Listening**
+
+Athena is monitoring the classroom and waiting for an appropriate reason to respond.
+
+**Held Back**
+
+Athena identifies something relevant but deliberately chooses not to interrupt the teacher.
+
+**Speaking**
+
+Athena has been given the floor and is actively responding.
+
+### Teacher priority
+
+If the teacher begins speaking while Athena is talking, Athena's current response is immediately interrupted.
+
+The teacher always has the floor.
+
+Athena also maintains a record of held back doubts so useful observations are not lost simply because she chose not to interrupt.
+
+---
+
+# 3. Shared Whiteboard
+
+Athena includes a live collaborative whiteboard powered by Excalidraw.
+
+The entire classroom can see the same board in real time.
+
+### Capabilities
+
+* Teacher annotations
+* Athena generated diagrams
+* Live collaborative drawing
+* Shared classroom state
+* Visual explanations during voice interaction
+
+Athena can turn a spoken explanation into a visual representation directly in front of the class.
+
+---
+
+# 4. Interactive 3D Learning
+
+Athena extends classroom learning beyond voice, slides, and static diagrams through interactive 3D educational experiences.
+
+### 3D Books
+
+Teachers can use interactive 3D learning content to make complex concepts more visual and engaging.
+
+Students can explore concepts spatially while Athena explains what they are seeing.
+
+### 3D Educational Models
+
+Athena can integrate relevant educational 3D models through **Sketchfab**, allowing students to explore objects and structures interactively.
+
+This can be particularly useful for topics where spatial understanding matters.
+
+Examples include:
+
+* Biology
+* Human anatomy
+* Chemistry
+* Physics
+* Geography
+* Engineering
+* Scientific structures
+
+Instead of only saying:
+
+> “This is how the structure works.”
+
+Athena can explain the concept while students **see and explore the structure themselves**.
+
+### Classroom integration
+
+3D learning works alongside Athena's existing classroom capabilities.
+
+**Voice explanation → 3D visualization → Whiteboard explanation → Quiz → Understanding check**
+
+This turns Athena from a conversational AI into a more complete interactive learning environment.
+
+---
+
+# 5. Live Quizzes and Gap Detection
+
+Athena does not wait until the end of a lesson to discover whether students understood the material.
+
+She can conduct live quizzes during the classroom session.
+
+### Quiz capabilities
+
+* Timed multiple choice questions
+* Teacher initiated quizzes
+* Athena initiated quizzes
+* Real time scoring
+* Student level results
+* Topic based assessment
+
+Athena monitors quiz responses and identifies patterns.
+
+If multiple students struggle with the same concept, Athena flags it as a **class wide learning gap**.
+
+The teacher can then launch a targeted quiz or revisit that specific concept immediately.
+
+---
+
+# 6. Nobody Left Behind
+
+Athena is designed to support students who may otherwise be overlooked in a classroom.
+
+### Shared Workspace
+
+Students can submit doubts and questions through a shared workspace.
+
+Questions, teacher insights, key takeaways, and held back doubts can be organized and surfaced without interrupting the lesson.
+
+### Targeted Reading
+
+Athena can recommend supplementary material for struggling students.
+
+The teacher retains approval before the material reaches the student.
+
+### One on One Catch Up
+
+Students can book individual catch up sessions with the teacher and Athena.
+
+They can select:
+
+* Available time
+* Focus topic
+* Preferred language
+
+### Absent Student Dispatcher
+
+Students who miss an entire class can receive a generated catch up package based on the actual classroom session.
+
+The package can include:
+
+* Session summary
+* Key concepts
+* Important takeaways
+* Identified misconceptions
+* Diagnostic quiz
+* Relevant learning gaps
+
+The package can also be dispatched through email using Resend.
+
+---
+
+# 7. Teacher Controls
+
+Athena never becomes the authority inside the classroom.
+
+The teacher remains in complete control.
+
+### Available controls
+
+| Control              | Effect                                                 |
+| -------------------- | ------------------------------------------------------ |
+| Bring Athena in      | Starts Athena's live agent session                     |
+| Mute Athena          | Immediately silences Athena                            |
+| Unmute Athena        | Restores her ability to speak                          |
+| Send Athena out      | Removes Athena from the classroom                      |
+| Cut off current turn | Immediately ends her current response                  |
+| Force speak          | Makes Athena address a specific topic                  |
+| Disable topic        | Prevents Athena from discussing a selected subject     |
+| Student invocation   | Controls whether students can directly address Athena  |
+| Student proficiency  | Sets the learning level used to calibrate explanations |
+
+Every important Athena action can be overridden by the teacher.
+
+---
+
+# 8. Athena AI Assistant
+
+Athena also includes a private teacher copilot.
+
+This instance is visible only to the teacher and does not interrupt the classroom.
+
+It can:
+
+* Suggest check in questions
+* Generate real world analogies
+* Summarize how the class is progressing
+* Draft challenge problems
+* Help the teacher respond to classroom situations
+
+The teacher can consult Athena privately while the main classroom interaction continues uninterrupted.
+
+---
+
+# 9. Post Class Report
+
+When the session ends, Athena transforms the classroom activity into a structured report.
+
+### Class insights
+
+* Overall concept understanding
+* Topics covered
+* Questions asked
+* Learning gaps
+* Common misconceptions
+* Quiz performance
+
+### Student insights
+
+* Proficiency level
+* Questions asked
+* Quiz performance
+* Concept mastery
+* Individual learning notes
+
+The purpose is to give the teacher actionable information instead of leaving them with only a raw classroom transcript.
+
+---
+
+# 10. Multilingual Support
+
+Athena supports multilingual classroom experiences through transcript translation and configurable participant language preferences.
+
+This allows students with different language preferences to participate more comfortably in the same classroom.
+
+Indian language support can also be enabled through Sarvam AI.
+
+---
+
+# 11. Screen Sharing
+
+Permitted participants can share their screens with the classroom.
+
+The teacher can control screen sharing permissions for individual students.
+
+An active screen share can automatically become the main classroom view.
+
+---
+
+# 12. Avatar and Visual Presence
+
+Athena has a visual presence inside the classroom rather than appearing only as an audio stream.
+
+### Visual states
+
+* Animated entrance when Athena joins
+* Idle animation during the session
+* Speaking animation when Athena is actively talking
+* Visual indication of Athena's active state
+
+This creates a recognizable classroom presence while keeping the interface focused on learning.
+
+---
+
+# Technology Stack
+
+| Layer                   | Technology                                       |
+| ----------------------- | ------------------------------------------------ |
+| Frontend                | Next.js, React, TypeScript, Tailwind CSS         |
+| Real Time Communication | Agora RTC, Agora RTM                             |
+| AI Voice Agent          | Agora Conversational AI Engine, Agora Agents SDK |
+| Speech To Text          | Deepgram, Sarvam AI                              |
+| Language Models         | Agora resold OpenAI compatible models            |
+| Text To Speech          | MiniMax TTS, Sarvam TTS                          |
+| Backend                 | Node.js, Fastify, TypeScript                     |
+| Shared Whiteboard       | Excalidraw                                       |
+| 3D Learning             | Sketchfab                                        |
+| Avatar Animation        | Lottie, HTML5 video                              |
+| Email                   | Resend                                           |
+| Database                | PostgreSQL                                       |
+| Monorepo                | pnpm workspaces                                  |
+| Shared Types            | @echosphere/shared types                         |
+
+---
+
+# Architecture
+
+```text
+                    ┌─────────────────────┐
+                    │       Teacher       │
+                    └──────────┬──────────┘
+                               │
+                               ▼
+                    ┌─────────────────────┐
+                    │   Athena Classroom  │
+                    └──────────┬──────────┘
+                               │
+             ┌─────────────────┼─────────────────┐
+             │                 │                 │
+             ▼                 ▼                 ▼
+       Voice Agent        Visual Learning    Assessment
+             │                 │                 │
+             │          ┌──────┴──────┐          │
+             │          │             │          │
+             ▼          ▼             ▼          ▼
+          Agora      Whiteboard    3D Models   Live Quiz
+                         │         Sketchfab      │
+                         │             │          │
+                         └──────┬──────┘          │
+                                │                 │
+                                ▼                 ▼
+                         Classroom State    Learning Gaps
+                                │                 │
+                                └────────┬────────┘
+                                         ▼
+                                Post Class Intelligence
 ```
-┌─────────────────┐         ┌──────────────────────┐         ┌─────────────────┐
-│   apps/web       │◄──────►│  apps/orchestrator     │◄──────►│  Agora Cloud     │
-│   (Next.js)      │  REST  │  (Fastify, Node.js)    │  REST  │  ConvoAI Engine  │
-│                   │  + SSE │                         │        │  RTC / RTM       │
-└─────────────────┘         └──────────────────────┘         └─────────────────┘
-        │                             │
-        │  Agora RTC / RTM (browser)  │  holds live AgentSession
-        │  direct connection          │  in memory; relays
-        ▼                             ▼  transcript + control events
-   Live classroom room          Session state, floor logic,
-   (audio, video, board)        quizzes, gaps, reports
-```
-
-- The **frontend** connects directly to Agora's RTC/RTM channels for audio and the live transcript stream (Agora's RTM SDK is browser-only, so the browser is the only place the agent's live ASR output can be observed).
-- The **orchestrator** is a long-lived Node process — not serverless — because it must hold a live `AgentSession` object in memory to call `interrupt()`, `say()`, `think()`, and `update()` on Athena's running agent.
-- A custom **floor state machine** in the orchestrator sits on top of Agora's own voice-activity detection, giving the teacher unconditional, instant barge-in rights that a generic VAD setting alone can't guarantee.
 
 ---
 
-## Getting Started
+# Implementation Flow
 
-### Prerequisites
+```text
+Teacher Creates Session
+          ↓
+Students Join Classroom
+          ↓
+Teacher Brings Athena In
+          ↓
+Athena Connects Through Agora
+          ↓
+Classroom Audio and Context
+          ↓
+Athena Listening State
+          ↓
+Teacher Invocation or Relevant Intervention
+          ↓
+AI Reasoning
+          ↓
+Voice Response
+          ↓
+Visual Explanation
+          ↓
+Whiteboard or 3D Learning
+          ↓
+Live Quiz
+          ↓
+Learning Gap Detection
+          ↓
+Targeted Support
+          ↓
+Session Summary
+          ↓
+Post Class Report
+          ↓
+Personalized Catch Up
+```
 
-- Node.js
-- pnpm
-- An Agora project (App ID + App Certificate, plus RESTful API Customer ID/Secret for the Conversational AI Engine)
-- A Resend API key (optional — only needed for the absent-dispatcher email feature)
+---
 
-### Install
+# System Architecture
+
+```text
+┌──────────────────────┐
+│      apps/web        │
+│      Next.js         │
+│                      │
+│ Teacher Dashboard    │
+│ Student Classroom    │
+│ Whiteboard           │
+│ Workspace            │
+│ Quiz Interface       │
+│ 3D Learning View     │
+└──────────┬───────────┘
+           │
+           │ REST + SSE
+           │
+           ▼
+┌────────────────────────────┐
+│     apps/orchestrator      │
+│      Fastify + Node.js     │
+│                            │
+│ Agent Lifecycle            │
+│ Floor State Machine        │
+│ Session State              │
+│ Quiz Engine                │
+│ Gap Detection              │
+│ Support System             │
+│ Report Generation          │
+└────────────┬───────────────┘
+             │
+             │
+             ▼
+┌────────────────────────────┐
+│        Agora Cloud         │
+│                            │
+│ RTC                        │
+│ RTM                        │
+│ Conversational AI Engine   │
+└────────────┬───────────────┘
+             │
+             ▼
+      Live AI Co Teacher
+```
+
+---
+
+# Getting Started
+
+## Prerequisites
+
+* Node.js
+* pnpm
+* Agora project
+* Agora App ID
+* Agora App Certificate
+* Agora Conversational AI credentials
+* Resend API key for absent student email dispatch
+* Optional Sarvam AI credentials
+
+## Installation
 
 ```bash
 pnpm install
 ```
 
-### Run
-
-Two processes run side by side, in separate terminals:
+## Run Frontend
 
 ```bash
-# Terminal 1 — frontend
 pnpm --filter web dev
+```
 
-# Terminal 2 — orchestrator
+## Run Orchestrator
+
+```bash
 pnpm --filter @echosphere/orchestrator dev
 ```
 
-The frontend runs at `http://localhost:3000`, the orchestrator at `http://localhost:8787`.
+The frontend runs on port 3000.
+
+The orchestrator runs on port 8787.
 
 ---
 
-## Environment Variables
+# Environment Variables
 
-Set these in `apps/orchestrator/.env`:
-
-```dotenv
-# Required — Agora RTC/RTM credentials
+```env
 NEXT_PUBLIC_AGORA_APP_ID=
 NEXT_AGORA_APP_CERTIFICATE=
 
-# Required — Agora Conversational AI Engine REST credentials
 AGORA_CUSTOMER_ID=
 AGORA_CUSTOMER_SECRET=
 
-# LLM model resold through Agora (one of: gpt-4o-mini, gpt-4.1-mini, gpt-5-nano, gpt-5-mini)
-LLM_MODEL=gpt-4o-mini
+LLM_MODEL=gpt 4o mini
 
-# Optional — Sarvam AI (Indian language STT/TTS); falls back to Deepgram/MiniMax if unset
 SARVAM_API_KEY=
 SARVAM_SPEAKER=
 SARVAM_TARGET_LANGUAGE_CODE=
 
-# Optional — absent-student email dispatch
 RESEND_API_KEY=
 
-# Optional — durable session/report storage; omit for in-memory-only mode
 DATABASE_URL=
 
-# Orchestrator server
 PORT=8787
 CORS_ORIGINS=http://localhost:3000
 ```
 
 ---
 
-## Project Structure
+# Project Structure
 
-```
+```text
 apps/
-  web/                     Next.js frontend
-    app/
-      join/                 Session join flow
-      teacher/[sessionId]/  Teacher dashboard
-      classroom/[sessionId]/Student classroom view
-    components/
-      classroom/             Room stage, audio/RTC layer, whiteboard, drawer
-      workspace/              Shared sticky-note workspace
-      support/                Absent dispatcher, 1:1 booking, targeted reading
-      meraki/                 Restraint meter, suppressed-intervention panel
-  orchestrator/              Fastify backend
-    src/
-      agent/                  Agora ConvoAI agent lifecycle, prompt building
-      routes/                  REST API (sessions, agent control, quizzes, workspace…)
-      support/                 Absent-packet generation + dispatch, targeted reading
-      gaps/                    Learning-gap detection
-      state/                   In-memory session registry, floor state machine
-packages/
-  shared-types/              Types shared between frontend and orchestrator
+│
+├── web/
+│   ├── app/
+│   │   ├── join/
+│   │   ├── teacher/[sessionId]/
+│   │   └── classroom/[sessionId]/
+│   │
+│   └── components/
+│       ├── classroom/
+│       ├── workspace/
+│       ├── support/
+│       ├── learning/
+│       └── meraki/
+│
+├── orchestrator/
+│   └── src/
+│       ├── agent/
+│       ├── routes/
+│       ├── support/
+│       ├── gaps/
+│       └── state/
+│
+└── packages/
+    └── shared types/
 ```
 
 ---
 
-*Built on Agora's real-time infrastructure. Athena EchoSphere — not an AI running the classroom. A teacher, with a co-teacher who knows exactly when to speak, and when not to.*
+# What Makes Athena Different
+
+Athena is not designed to replace the teacher.
+
+She is designed to make the teacher more capable.
+
+She can listen to a classroom, understand what is happening, explain concepts, visualize ideas, detect confusion, support individual students, and turn classroom activity into actionable insight.
+
+But the teacher always has the final say.
+
+**Athena does not run the classroom.**
+
+**The teacher does.**
+
+Athena is the co teacher who knows exactly when to speak, when to visualize, when to intervene, and when to stay silent.
+
+---
+
+# Built With Agora
+
+Athena EchoSphere is built on Agora's real time infrastructure, combining live classroom communication with conversational AI to create an AI participant that can actually exist inside the classroom.
+
+**Athena EchoSphere**
+
+**A teacher, with a co teacher who knows when to speak and when not to.**
